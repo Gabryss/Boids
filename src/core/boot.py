@@ -7,7 +7,6 @@ Initialize and start the simulation
 """
 
 import pyglet
-from enums.colors import Color
 from enums.config import Config
 
 
@@ -19,7 +18,7 @@ window = pyglet.window.Window(
 
 batch = pyglet.graphics.Batch()
 
-triangle = pyglet.shapes.Triangle(0,0, 20, 20, 20, 10, Config.DEFAULT_BOID_COLOR_1, batch=batch)
+triangle = pyglet.shapes.Triangle(0,0, 20, 20, 20, 10, Config.DEFAULT_COLOR_RED.value, batch=batch)
 
 
 def init():

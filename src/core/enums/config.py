@@ -6,7 +6,8 @@ Properties of all forces and boid population/group
 from enum import Enum
 from .colors import Color
 
-class Config(Enum):
+
+class Config (Enum):
     DEFAULT_REPULSION_FORCE = 5.0 # repulsion must be important compared to cohesion
     DEFAULT_SEPARATION_FORCE = 1.0
     DEFAULT_COHESION_FORCE = 0.0001
@@ -19,10 +20,10 @@ class Config(Enum):
 
     DEFAULT_BOIDS_NB = 100
 
-    DEFAULT_BOID_COLOR_1 = Color.RED.value
-    DEFAULT_BOID_COLOR_2 = Color.BLUE.value
-    DEFAULT_BOID_COLOR_3 = Color.GREEN.value
-    DEFAULT_BOID_COLOR_4 = Color.PURPLE.value
+    DEFAULT_COLOR_RED = Color.RED.value
+    DEFAULT_COLOR_BLUE = Color.BLUE.value
+    DEFAULT_COLOR_GREEN = Color.GREEN.value
+    DEFAULT_COLOR_PURPLE = Color.PURPLE.value
     MAXSPEED = 100.0
     MAXFORCE = 10.0
     VISIBLE_ANGLE = 90.0
