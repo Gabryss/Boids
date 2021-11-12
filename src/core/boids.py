@@ -6,7 +6,8 @@ import random
 import pyglet
 
 def initialize_boids():
-    pass
+    boid = Boid()
+    return boid
 
 
 

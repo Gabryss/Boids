@@ -8,7 +8,7 @@ Initialize and start the simulation
 
 import pyglet
 from enums.config import Config
-from .boids import Boid
+import boids
 
 
 window = pyglet.window.Window(
@@ -17,13 +17,6 @@ window = pyglet.window.Window(
     caption = "Boid simulation",
 )
 
-boid = Boid()
-
-
-def init():
-    #Initialize the simulation with boids
-    pass
-
 @window.event
 def on_draw():
     window.clear()
@@ -31,7 +24,8 @@ def on_draw():
 
 if __name__ == "__main__":
     # Start it up!
-    init()
+    # init()
+    boid = boids.initialize_boids()
 
     # Update the game 120 times per second
     # pyglet.clock.schedule_interval(update, 1 / 120.0)
