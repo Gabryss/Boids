@@ -5,7 +5,7 @@ Properties of all forces and boid population/group
 """
 from enum import Enum
 from .colors import Color
-
+import pyglet
 
 class Config (Enum):
     DEFAULT_REPULSION_FORCE = 5.0 # repulsion must be important compared to cohesion
@@ -38,3 +38,5 @@ class Config (Enum):
     REPULSION_OFF = False
     ALIGNMENT_OFF = False
     SEPARATION_OFF = False
+
+    BATCH = pyglet.graphics.Batch()
