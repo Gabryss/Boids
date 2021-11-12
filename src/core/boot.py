@@ -8,6 +8,7 @@ Initialize and start the simulation
 
 import pyglet
 from enums.config import Config
+from .boids import Boid
 
 
 window = pyglet.window.Window(
@@ -16,9 +17,7 @@ window = pyglet.window.Window(
     caption = "Boid simulation",
 )
 
-batch = pyglet.graphics.Batch()
-
-triangle = pyglet.shapes.Triangle(0,0, 20, 20, 20, 10, Config.DEFAULT_COLOR_RED.value, batch=batch)
+boid = Boid()
 
 
 def init():
@@ -28,7 +27,7 @@ def init():
 @window.event
 def on_draw():
     window.clear()
-    batch.draw()
+    Config.BATCH.value.draw()
 
 if __name__ == "__main__":
     # Start it up!
