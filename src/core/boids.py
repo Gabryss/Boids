@@ -14,12 +14,14 @@ def initialize_boids():
 
 class Boid ():
 
-    def __init__(self, position_p=random.uniform(0,100), velocity_p=random.uniform(0,Config.MAXSPEED.value), size_p=10.0, color_p=Config.DEFAULT_COLOR_RED.value):
+    def __init__(self, position_p=random.uniform(0,100), velocity_p=random.uniform(0,Config.MAXSPEED.value), size_p=3, color_p=Config.DEFAULT_COLOR_RED.value):
         self.position = position_p
         self.velocity = velocity_p
         self.size = size_p
         self.color = color_p
-        self.shape = pyglet.shapes.Triangle(0,0, 20, 20, 20, 10, self.color, batch=Config.BATCH.value)
+
+        #Triangle shape parameters : p1(x), p1(y), p2(x), p2(y), p3(x), p3(y)
+        self.shape = pyglet.shapes.Triangle(self.position+(2*self.size),self.position, self.position-self.size, self.position+self.size, self.position-self.size, self.position-self.size, self.color, batch=Config.BATCH.value)
 
     def __repr__(self):
         return "Boid: position={}, velocity={}, color={}".format(
