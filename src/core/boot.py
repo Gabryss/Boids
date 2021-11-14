@@ -4,6 +4,16 @@ Initialize and start the simulation
 1-Initialize the window
 2-Initialize graphics batched rendering (for optimized performance)
 3-Start the simulation
+
+
+
+
+##TO DO
+    -Update window width and height when resized
+    -Boids rules
+    -Walls
+    -Translation without changing the pyglet library
+    -GUI
 """
 
 import pyglet
@@ -22,13 +32,21 @@ def on_draw():
     window.clear()
     Config.BATCH.value.draw()
 
+
 if __name__ == "__main__":
-    # Start it up!
-    # init()
-    boid = boids.initialize_boids()
+
+    # Initialize all boids!
+    boids_list=[]
+    for i in range(int(Config.DEFAULT_BOIDS_NB.value)):
+        boids_list.append(boids.initialize_boid(window.width,window.height))
+        print(boids_list[i].velocity)
+
+    def update(dt):
+        for i in range(len(boids_list)):
+            boids_list[i].update(dt)
 
     # Update the game 120 times per second
-    # pyglet.clock.schedule_interval(update, 1 / 120.0)
+    pyglet.clock.schedule_interval(update, 1 / 120.0)
 
-    # Tell pyglet to do its thing
+    # Run the app
     pyglet.app.run()
