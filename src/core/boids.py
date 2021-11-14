@@ -5,9 +5,11 @@ from enums.config import Config
 import random
 import pyglet
 
-def initialize_boids():
-    boid = Boid()
-    return boid
+def initialize_boids(nb=20):
+    boids_list=[]
+    for i in range(20):
+        boids_list.append(Boid())
+    return boids_list
 
 
 
