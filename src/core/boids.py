@@ -7,25 +7,27 @@ import random
 import pyglet
 import boot
 import numpy as np
+import rules
+import utils
 
 def initialize_boid(width, height):
     return(Boid(position_p=[random.uniform(0,width), random.uniform(0,height)], velocity_p=[random.uniform(-20,20), random.uniform(-20,20)]))
 
 
-class Boid(Polygon):
+class Boid():
 
-    def __init__(self, position_p=[random.uniform(0,500),random.uniform(0,500)], velocity_p=[random.uniform(-20,20), random.uniform(-20,20)], size_p=3, color_p=Config.DEFAULT_COLOR_RED.value):
+    def __init__(self, position_p=[random.uniform(0,500),random.uniform(0,500)], velocity_p=[random.uniform(-20,20), random.uniform(-20,20)], size_p=3, color_p=Config.DEFAULT_COLOR_GREEN.value):
         self.position = position_p
         self.velocity = velocity_p
         self.size = size_p
         self.color = color_p
         self.time = 0
+        self.bounds = [[self.position[0],self.position[1]],[self.position[0]-self.size,self.position[1]-self.size],[self.position[0]+2*self.size,self.position[1]],[self.position[0]-self.size,self.position[1]+self.size]]
         self.batch = Config.BATCH.value
-        self._coordinates = list([self.position[0],self.position[1]],[self.position[0]-self.size,self.position[1]-self.size],[self.position[0]+2*self.size,self.position[1]],[self.position[0]-self.size,self.position[1]+self.size])
-        super().__init__(coordinates=self._coordinates,color=self.color, batch=Config.BATCH.value)
+        self.all_boids = []
 
         #Boid shape parameters : center_point [x1,y1], lower_wing [x2,y2], noze [x3,y3], upper_wing[x4,y4], color, batch
-        self.shape = pyglet.shapes.Polygon([self.position[0],self.position[1]],[self.position[0]-self.size,self.position[1]-self.size],[self.position[0]+2*self.size,self.position[1]],[self.position[0]-self.size,self.position[1]+self.size],color=self.color, batch=Config.BATCH.value)
+        self.shape = pyglet.shapes.Polygon(self.bounds[0],self.bounds[1],self.bounds[2],self.bounds[3],color=self.color, batch=Config.BATCH.value)
 
 
     def __repr__(self):
@@ -56,8 +58,17 @@ class Boid(Polygon):
     def set_position(self, position_p):
         self.position = position_p
     
+    def get_all_boids(self, all_boids_p):
+        self.all_boids = all_boids_p
+    
     def nearby_boids(self,boids):
-        pass
+        for boid in boids:
+            diff = (boid.position[0] - self.position[0], boid.position[1] - self.position[1])
+            if (boid != self and
+                    utils.magnitude(*diff) <= Config.DEFAULT_ALIGNMENT_DIST.value and
+                    utils.angle_between(self.velocity, diff) <= Config.VISIBLE_ANGLE.value):
+                yield boid
+        return
     
     @property
     def x1(self):
@@ -136,6 +147,7 @@ class Boid(Polygon):
     def y3(self, value):
         self._coordinates[3][1] = value
         self._update_position()
+
     
     def _rotate_shape(self):
         """Rotate base image using the velocity and assign to image."""
@@ -151,15 +163,18 @@ class Boid(Polygon):
 
         self.shape.x1 += self.velocity[0] * delta_time
         self.shape.y1 += self.velocity[1] * delta_time
-
+        
         self.shape.x2 += self.velocity[0] * delta_time
         self.shape.y2 += self.velocity[1] * delta_time
 
         self.shape.x3 += self.velocity[0] * delta_time
         self.shape.y3 += self.velocity[1] * delta_time
 
-        self._rotate_shape()
 
+        self._rotate_shape()
+        
+        #Edge limit of the window
+        #If a boid touch a border, he will reapear at the opposite one
         if self.shape.x > boot.window.width:
             self.shape.x = 0
 
@@ -195,4 +210,33 @@ class Boid(Polygon):
             self.shape.y2 = boot.window.height
 
             self.shape.y3 = boot.window.height + self.size
+        
+        nearby_boids = self.all_boids
+        # print(len(nearby_boids))
+
+        alignment_vector = rules.alignment(self, nearby_boids)
+        cohesion_vector = rules.cohesion(self, nearby_boids)
+        separation_vector = rules.collision_avoidance(self, nearby_boids)
+
+        self.forces = [ #(Config.DEFAULT_ALIGNMENT_FORCE.value, alignment_vector),
+                        (Config.DEFAULT_COHESION_FORCE.value, cohesion_vector),
+                        (Config.DEFAULT_SEPARATION_FORCE.value, separation_vector)] 
+
+        # print(self.velocity[0], "Old x velocity")
+        # print(self.velocity[1], "Old y velocity")
+
+        for force, vector in self.forces:
+            # print("Force : ", force, " vector : ", vector)
+            self.velocity[0] += force * vector[0]
+            self.velocity[1] += force * vector[1]
+
+
+        # print(self.velocity[0], "New x velocity")
+        # print(self.velocity[1], "New y velocity")
+
+
+
+
+        # ensure that the boid's velocity is <= _MAX_SPEED
+        # self.velocity = vector.limit_magnitude(self.velocity, _MAX_SPEED, _MIN_SPEED)
     
