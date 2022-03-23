@@ -6,7 +6,6 @@ Rules for the boids
 ## Cohesion
 
 ## Separation
-**test** bonjour
 
 ## Collision avoidance
 """
@@ -22,23 +21,23 @@ def alignment(me, nearby_boids):
         for boid in nearby_boids:
                 sum_x += boid.velocity[0]
                 sum_y += boid.velocity[1]
-
-        average_x, average_y = (sum_x / len(nearby_boids), sum_y / len(nearby_boids))
-        return [average_x - me.velocity[0], average_y - me.velocity[1]]
+        
+        if (sum_x,sum_y) != (0,0):
+            average_x, average_y = (sum_x / len(nearby_boids), sum_y / len(nearby_boids))
+            return [average_x - me.velocity[0], average_y - me.velocity[1]]
     else:
         return [0.0,0.0]
 
 
 def cohesion(me, nearby_boids):
     if len(nearby_boids) > 0:
-        # print("Yamete")
         sum_x, sum_y = 0.0, 0.0
         for boid in nearby_boids:
             sum_x += boid.position[0]
             sum_y += boid.position[1]
-
-        average_x, average_y = (sum_x / len(nearby_boids), sum_y / len(nearby_boids))
-        return [average_x - me.position[0], average_y - me.position[1]]
+        if (sum_x,sum_y) != (0,0):
+            average_x, average_y = (sum_x / len(nearby_boids), sum_y / len(nearby_boids))
+            return [ average_x - me.position[0], average_y - me.position[1] ]
     else:
         return [0.0, 0.0]
 

@@ -23,7 +23,7 @@ import boids
 
 
 window = pyglet.window.Window(
-    fullscreen = True,
+    fullscreen = False,
     resizable = True,
     caption = "Boid simulation",
 )
@@ -40,10 +40,9 @@ if __name__ == "__main__":
     boids_list=[]
     for i in range(int(Config.DEFAULT_BOIDS_NB.value)):
         boids_list.append(boids.initialize_boid(window.width,window.height))
-        print(boids_list[i].velocity)
 
-    # for i in range(len(boids_list)):
-    #     boids_list[i].get_all_boids(boids_list)
+    for i in range(len(boids_list)):
+        boids_list[i].get_all_boids(boids_list)
 
     def update(dt):
         for i in range(len(boids_list)):
