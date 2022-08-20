@@ -16,41 +16,41 @@ Initialize and start the simulation
     -Translation without changing the pyglet library
     -GUI
 """
-
 import pyglet
 from enums.config import Config
-import boids
+from simulate import Simulate
 
 
 window = pyglet.window.Window(
-    fullscreen = False,
-    resizable = True,
-    caption = "Boid simulation",
-)
+            fullscreen = False,
+            height = Config.WINDOW_HEIGHT.value,
+            width = Config.WINDOW_WIDTH.value,
+            resizable = True,
+            caption = "Boid simulation",
+        )
+batch = Config.BATCH.value
 
 @window.event
 def on_draw():
     window.clear()
-    Config.BATCH.value.draw()
+    batch.draw()
 
 
 if __name__ == "__main__":
 
-    # Initialize all boids!
-    boids_list=[]
-    for i in range(int(Config.DEFAULT_BOIDS_NB.value)):
-        boids_list.append(boids.initialize_boid(window.width,window.height))
-
-    for i in range(len(boids_list)):
-        boids_list[i].get_all_boids(boids_list)
+    simulation = Simulate()
+    simulation.init()
 
     def update(dt):
-        for i in range(len(boids_list)):
-            boids_list[i].update(dt)
-            boids_list[i].get_all_boids(boids_list)
+        # Update the simulation
+        for i in range(len(simulation.boids_list)):
+            simulation.boids_list[i].update(dt)
+            simulation.get_boids(accuracy="nearby")
 
-    # Update the game 120 times per second
-    pyglet.clock.schedule_interval(update, 1 / 120.0)
+    # Update the game 60 times per second
+    pyglet.clock.schedule_interval(update, 1 / 60.0)
+
+        
 
     # Run the app
     pyglet.app.run()

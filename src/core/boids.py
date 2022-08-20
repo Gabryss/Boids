@@ -1,12 +1,11 @@
 """
-Boids file
+Boids core file
 """
 from distutils.command.config import config
 from pyglet.shapes import Polygon,_ShapeBase
 from enums.config import Config
 import random
 import pyglet
-import boot
 import numpy as np
 import rules
 import utils
@@ -17,15 +16,16 @@ def initialize_boid(width, height):
 
 class Boid():
 
-    def __init__(self, position_p=[random.uniform(0,500),random.uniform(0,500)], velocity_p=[random.uniform(-20,20), random.uniform(-20,20)], size_p=3, color_p=Config.DEFAULT_COLOR_GREEN.value):
+    def __init__(self, position_p=np.array([random.uniform(0,500),random.uniform(0,500)]), velocity_p=np.array([random.uniform(-20,20), random.uniform(-20,20)]), size_p=3, color_p=Config.DEFAULT_COLOR_GREEN.value):
         self.position = position_p
         self.velocity = velocity_p
         self.size = size_p
         self.color = color_p
+        self.acceleration = np.array([0.0,0.0])
         self.time = 0
         self.bounds = [[self.position[0],self.position[1]],[self.position[0]-self.size,self.position[1]-self.size],[self.position[0]+2*self.size,self.position[1]],[self.position[0]-self.size,self.position[1]+self.size]]
         self.batch = Config.BATCH.value
-        self.all_boids = []
+        self.nearby_boids = []
 
         # self.image = pyglet.image.load("/home/ggarcia/Documents/Boids/src/core/boid2.png")
         # self.image.anchor_x = self.image.width // 2
@@ -35,47 +35,161 @@ class Boid():
         self.shape = pyglet.shapes.Polygon(self.bounds[0],self.bounds[1],self.bounds[2],self.bounds[3],color=self.color, batch=Config.BATCH.value)
 
 
-    def __repr__(self):
-        return "Boid: position={}, velocity={}, color={}".format(
-            self.position, self.velocity, self.color)
     
-    def get_size(self):
-        return self.size
     
-    def get_color(self):
-        return self.color
-    
-    def get_velocity(self):
-        return self.velocity
-    
-    def get_position(self):
-        return self.position
-    
-    def set_size(self,size_p):
-        self.size = size_p
-    
-    def set_color(self, color_p):
-        self.color = color_p
-    
-    def set_velocity(self, velocity_p):
-        self.velocity = velocity_p
-    
-    def set_position(self, position_p):
-        self.position = position_p
-    
-    def get_all_boids(self, all_boids_p):
-        self.all_boids = all_boids_p
-    
-    def nearby_boids(self,boids):
+    def discover_nearby_boids(self,boids):
+        """
+        Discover nearby boids.
+        """
         nearby_boids = []
         for boid in boids:
-            diff = (boid.position[0] - self.position[0], boid.position[1] - self.position[1])
+            # print(type(boid.get_position()), type(self.position))
+            # diff = boid.get_position() - self.position
+            diff = [other_boid - this_boid for other_boid, this_boid in zip(boid.get_position(), self.position)]
+            # diff = (boid.position[0] - self.position[0], boid.position[1] - self.position[1])
+
+            # print(diff,"diff")
             if (boid != self and
                     utils.magnitude(*diff) <= Config.DEFAULT_ALIGNMENT_DIST.value and
                     utils.angle_between(self.velocity, diff) <= Config.VISIBLE_ANGLE.value):
                 nearby_boids.append(boid)
+        self.nearby_boids = nearby_boids
         return nearby_boids
+
+        # nearby_boids = []
+        # for boid in boids:
+        #     diff = [other_boid - this_boid for other_boid, this_boid in zip(boid.get_position(), self.position)]
+        #     if np.linalg.norm(diff) <= Config.MAXDIST.value:
+        #         nearby_boids.append(boid)
+        # self.nearby_boids = nearby_boids
+        # return nearby_boids
+
     
+    def _rotate_shape(self):
+        """
+        Rotate base image using the velocity and assign to image.
+        """
+        angle = -np.rad2deg(np.angle(self.velocity[0] + 1j * self.velocity[1]))
+        self.shape.rotation = angle
+
+
+    def _edge(self):
+        """
+        Check if the boid is outside the window and if so, reflect it.
+        If the boid touch a border of the window, it will respawn in the opposite border.
+        """       
+
+        if self.shape.x > Config.WINDOW_WIDTH.value:
+            self.shape.x = 0
+
+            self.shape.x1 = -self.size
+
+            self.shape.x2 = 2*self.size
+
+            self.shape.x3 = -self.size
+
+            self.position = (0, self.shape.y)
+        
+        if self.shape.x < 0:
+            self.shape.x = Config.WINDOW_WIDTH.value
+
+            self.shape.x1 = Config.WINDOW_WIDTH.value - self.size
+
+            self.shape.x2 = Config.WINDOW_WIDTH.value + 2*self.size
+
+            self.shape.x3 = Config.WINDOW_WIDTH.value - self.size
+
+            self.position = (Config.WINDOW_WIDTH.value, self.shape.y)
+
+        if self.shape.y > Config.WINDOW_HEIGHT.value:
+            self.shape.y = 0
+
+            self.shape.y1 = -self.size
+
+            self.shape.y2 = 0
+
+            self.shape.y3 = +self.size
+
+            self.position = (self.shape.x, 0)
+
+        
+        if self.shape.y < 0:
+            self.shape.y = Config.WINDOW_HEIGHT.value
+
+            self.shape.y1 = Config.WINDOW_HEIGHT.value - self.size
+
+            self.shape.y2 = Config.WINDOW_HEIGHT.value
+
+            self.shape.y3 = Config.WINDOW_HEIGHT.value + self.size
+
+            self.position = (self.shape.x, Config.WINDOW_HEIGHT.value)
+    
+
+    def _apply_forces(self, boids):
+        """
+        Apply the forces to the boid.
+        """
+        alignment_vector = rules.alignment(self,boids)
+        cohesion_vector = rules.cohesion(self,boids)
+        separation_vector = rules.separation(self,boids)
+        self.forces = [ 
+                        # (Config.DEFAULT_ALIGNMENT_FORCE.value, alignment_vector),
+                        (Config.DEFAULT_COHESION_FORCE.value, cohesion_vector),
+                        (Config.DEFAULT_SEPARATION_FORCE.value, separation_vector),
+                        ]
+        
+        for force, vector in self.forces:
+            if force and vector is not None:
+                self.acceleration += vector * force
+
+        self.velocity += self.acceleration
+        
+
+    def _limit_velocity(self):
+        """
+        Limit the velocity to the maximum velocity.
+        """
+        if np.linalg.norm(self.velocity) > Config.MAXSPEED.value:
+            self.velocity = self.velocity / np.linalg.norm(self.velocity) * Config.MAXSPEED.value
+
+
+    def _update_position(self, delta_time_p):
+        """
+        Update the boid's position and velocity.
+        """
+        self.time += delta_time_p
+        
+        self.shape.x += self.velocity[0] * delta_time_p
+        self.shape.y += self.velocity[1] * delta_time_p
+
+        self.shape.x1 += self.velocity[0] * delta_time_p
+        self.shape.y1 += self.velocity[1] * delta_time_p
+        
+        self.shape.x2 += self.velocity[0] * delta_time_p
+        self.shape.y2 += self.velocity[1] * delta_time_p
+
+        self.shape.x3 += self.velocity[0] * delta_time_p
+        self.shape.y3 += self.velocity[1] * delta_time_p
+        
+
+    def update(self, delta_time_p):
+        """
+        Update all boid's properties.
+        """
+        self._update_position(delta_time_p)
+    
+        self._rotate_shape()
+        
+        self.position = np.array([self.shape.x,self.shape.y])
+
+        self._edge()
+
+        self._apply_forces(self.nearby_boids)
+
+        self._limit_velocity()
+
+
+
     @property
     def x1(self):
         """X coordinate of the shape.
@@ -153,125 +267,44 @@ class Boid():
     def y3(self, value):
         self._coordinates[3][1] = value
         self._update_position()
-
     
-    def _rotate_shape(self):
-        """Rotate base image using the velocity and assign to image."""
-        angle = -np.rad2deg(np.angle(self.velocity[0] + 1j * self.velocity[1]))
-        self.shape.rotation = angle
-
+    def __repr__(self):
+        return "Boid: position={}, velocity={}, color={}".format(
+            self.position, self.velocity, self.color)
     
-    def update(self, delta_time):
-        self.time += delta_time
-        # self.image.blit(self.position[0], self.position[1])
-
-        self.shape.x += self.velocity[0] * delta_time
-        self.shape.y += self.velocity[1] * delta_time
-
-        self.shape.x1 += self.velocity[0] * delta_time
-        self.shape.y1 += self.velocity[1] * delta_time
-        
-        self.shape.x2 += self.velocity[0] * delta_time
-        self.shape.y2 += self.velocity[1] * delta_time
-
-        self.shape.x3 += self.velocity[0] * delta_time
-        self.shape.y3 += self.velocity[1] * delta_time
-
+    def get_size(self):
+        return self.size
     
-        self._rotate_shape()
-        
-        self.position = (self.shape.x,self.shape.y)
-
-        #Edge limit of the window
-        #If a boid touch a border, he will reapear at the opposite one
-        if self.shape.x > boot.window.width:
-            self.shape.x = 0
-
-            self.shape.x1 = -self.size
-
-            self.shape.x2 = 2*self.size
-
-            self.shape.x3 = -self.size
-
-            self.position = (0, self.shape.y)
-        
-        if self.shape.x < 0:
-            self.shape.x = boot.window.width
-
-            self.shape.x1 = boot.window.width - self.size
-
-            self.shape.x2 = boot.window.width + 2*self.size
-
-            self.shape.x3 = boot.window.width - self.size
-
-            self.position = (boot.window.width, self.shape.y)
-
-        if self.shape.y > boot.window.height:
-            self.shape.y = 0
-
-            self.shape.y1 = -self.size
-
-            self.shape.y2 = 0
-
-            self.shape.y3 = +self.size
-
-            self.position = (self.shape.x, 0)
-
-        
-        if self.shape.y < 0:
-            self.shape.y = boot.window.height
-
-            self.shape.y1 = boot.window.height - self.size
-
-            self.shape.y2 = boot.window.height
-
-            self.shape.y3 = boot.window.height + self.size
-
-            self.position = (self.shape.x, boot.window.height)
-        
-
-
-        nearby_boids = self.nearby_boids(self.all_boids)
-        # nearby_boids = self.all_boids
-        # print(len(nearby_boids))
-        # print(nearby_boids)
-
-        alignment_vector = rules.alignment(self, nearby_boids)
-        cohesion_vector = rules.cohesion(self, nearby_boids)
-        separation_vector = rules.collision_avoidance(self, nearby_boids)
-
-        self.forces = [ (Config.DEFAULT_ALIGNMENT_FORCE.value, alignment_vector),
-                        (Config.DEFAULT_COHESION_FORCE.value, cohesion_vector),
-                        (Config.DEFAULT_SEPARATION_FORCE.value, separation_vector),
-                        ] 
-
-        # print(self.velocity[0], "Old x velocity")
-        # print(self.velocity[1], "Old y velocity")
-
-        for force, vector in self.forces:
-            # print("Force : ", force, " vector : ", vector)
-            self.velocity[0] += force * vector[0]
-            self.velocity[1] += force * vector[1]
-
-
-        # print(self.velocity[0], "New x velocity")
-        # print(self.velocity[1], "New y velocity")
+    def get_color(self):
+        return self.color
+    
+    def get_velocity(self):
+        return self.velocity
+    
+    def get_position(self):
+        return self.position
+    
+    def get_nearby_boids(self):
+        return self.nearby_boids
+    
+    def set_size(self,size_p):
+        self.size = size_p
+    
+    def set_color(self, color_p):
+        self.color = color_p
+    
+    def set_velocity(self, velocity_p):
+        self.velocity = velocity_p
+    
+    def set_position(self, position_p):
+        self.position = np.array(position_p)
+    
+    def set_nearby_boids(self, nearby_boids_p):
+        self.nearby_boids = nearby_boids_p
+    
 
 
 
-
-        # ensure that the boid's velocity is <= _MAX_SPEED
-        if self.velocity[0] > Config.MAXSPEED.value:
-            self.velocity[0] = Config.MAXSPEED.value
-        
-        if self.velocity[0] < -Config.MAXSPEED.value:
-            self.velocity[0] = -Config.MAXSPEED.value
-
-        if self.velocity[1] > Config.MAXSPEED.value:
-            self.velocity[1] = Config.MAXSPEED.value
-        
-        if self.velocity[1] < -Config.MAXSPEED.value:
-            self.velocity[1] = -Config.MAXSPEED.value
 
     
     
