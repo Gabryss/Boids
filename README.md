@@ -32,3 +32,23 @@ Each bird attempts to maintain a reasonable amount of distance between itself an
 - Python >= 3.8
 - numpy >= 1.21.4
 - pyglet >= 1.5.21
+
+## Launch the simulation
+In order to launch the simulation the `simulation.py` file has to be run with a pyglet version greater or equal to 1.5.21. Also this simulation does not support Python 2.x.
+
+## Configuration
+A configuration file named `config.py` can be found in the `src/core/enum` folder, please make sure that you close the previous simulation and saved the config file to apply you changes.
+
+# To do
+Some millestones may be left in progress while this side project is evolving. You can find those milestones here :
+- Walls
+- Real object avoidance (not only between boids but also with other objects/components)
+- GUI
+    + Add/remove boids
+    + Add/remove walls
+    + Add/remove hunter boids
+    + Population statistics
+
+- AI
+    + Genetic algorithms
+
