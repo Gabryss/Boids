@@ -100,3 +100,7 @@ def separation(me, nearby_boids):
             steering = (steering /np.linalg.norm(steering)) * Config.DEFAULT_ALIGNMENT_FORCE.value
 
     return steering
+
+
+def centripete(me):
+    return -me.position[0]
