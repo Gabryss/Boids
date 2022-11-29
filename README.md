@@ -12,19 +12,25 @@ In order to reproduce the behaviors of birds in groups, three rules have to be i
 Steer towards the average heading of local flockmates.
 Birds try to change their position so that it corresponds with the average alignment of other nearby birds.
 
-![Alignment](img/Rule_alignment.gif)
+<p align="center">
+  <img width="300" height="200" src="img/Rule_alignment.gif">
+</p>
 
 ## Cohesion
 Steer to move towards the average position (center of mass) of local flockmates.
 Every bird attempts to move towards the average position of other nearby birds.
 
-![Cohesion](img/Rule_cohesion.gif)
+<p align="center">
+  <img width="300" height="200" src="img/Rule_cohesion.gif">
+</p>
 
 ## Separation
 Steer to avoid crowding local flockmates.
 Each bird attempts to maintain a reasonable amount of distance between itself and any nearby birds, to prevent overcrowding.
 
-![Separation](img/Rule_separation.gif)
+<p align="center">
+  <img width="300" height="200" src="img/Rule_separation.gif">
+</p>
 
 # Setup
 
